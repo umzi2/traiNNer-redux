@@ -125,8 +125,21 @@ def parse_options(root_path, is_train=True):
     # random seed
     seed = opt.get('manual_seed')
     if seed is None:
-        seed = random.randint(1, 10000)
+        opt["deterministic"] = False
+        seed = 1024
         opt['manual_seed'] = seed
+        torch.backends.cudnn.benchmark = True
+        torch.backends.cudnn.benchmark_limit = 0
+    else:
+        # Determinism
+        opt["deterministic"] = True
+        os.environ['PYTHONHASHSEED'] = str(seed)
+        os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+        torch.backends.cudnn.deterministic = True
+        torch.backends.cudnn.benchmark = False
+        torch.use_deterministic_algorithms(True, warn_only=True)
     set_random_seed(seed + opt['rank'])
 
     # force to update yml options
