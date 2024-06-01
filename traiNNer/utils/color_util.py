@@ -1,7 +1,40 @@
 import numpy as np
 import torch
 
+def rgb_to_cbcr(img: torch.Tensor) -> torch.Tensor:
+    """
+    RGB to *CbCr. Outputs tensor with only CbCr channels.
+    ITU-R BT.601 primaries are used in this converison.
 
+    Args:
+        img (Tensor): Images with shape (n, 3, h, w), the range [0, 1], float, RGB format.
+    Returns:
+        (Tensor): converted images with the shape (n, 3/1, h, w), the range [0, 1], float.
+    """
+
+    if not isinstance(img, torch.Tensor):
+        raise TypeError(f"Input type is not a Tensor. Got {type(img)}")
+
+    if len(img.shape) < 3 or img.shape[-3] != 3:
+        raise ValueError(
+            f"Input size must have a shape of (*, 3, H, W). Got {img.shape}"
+        )
+
+    # bt.601 matrices in 16-240 range
+    weight = torch.tensor([
+        [65.481, -37.797, 112.0],
+        [128.553, -74.203, -93.786],
+        [24.966, 112.0, -18.214],
+    ]).to(img)
+    # limited to full range
+    bias = torch.tensor([16, 128, 128]).view(1, 3, 1, 1).to(img)
+    out_img = torch.matmul(img.permute(0, 2, 3, 1), weight).permute(0, 3, 1, 2) + bias
+    # 0-1 normalization
+    out_img = out_img / 255.0
+    # CbCr-only
+    out_img = out_img[:, 1:, :, :]
+
+    return out_img
 def rgb2ycbcr(img, y_only=False):
     """Convert a RGB image to YCbCr image.
 
