@@ -226,13 +226,9 @@ class RealESRGANModel(SRGANModel):
                 loss_dict['l_g_ldl'] = l_g_ldl
             # perceptual loss
             if self.cri_perceptual:
-                l_g_percep, l_g_style = self.cri_perceptual(self.output, percep_gt)
-                if l_g_percep is not None:
-                    l_g_total += l_g_percep
-                    loss_dict['l_g_percep'] = l_g_percep
-                if l_g_style is not None:
-                    l_g_total += l_g_style
-                    loss_dict['l_g_style'] = l_g_style
+                l_g_percep = self.cri_perceptual(self.output, self.gt)
+                l_g_total += l_g_percep
+                loss_dict['l_g_percep'] = l_g_percep
             # contextual loss
             if self.cri_contextual:
                 l_g_contextual = self.cri_contextual(self.output, self.gt)
